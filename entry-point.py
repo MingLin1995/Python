@@ -1,0 +1,9 @@
+#進場點計算
+Stop_Gain=float(input("停利點：")) 
+Stop_Loss=float(input("停損點："))
+Rate_of_risk_return_2=(Stop_Gain-Stop_Loss)/3+Stop_Loss
+Rate_of_risk_return_2_5=(Stop_Gain-Stop_Loss)/3.5+Stop_Loss
+Rate_of_risk_return_3=(Stop_Gain-Stop_Loss)/4+Stop_Loss
+print("風報比2的進場點：",Rate_of_risk_return_2)
+print("風報比2.5的進場點：",Rate_of_risk_return_2_5)
+print("風報比3的進場點：",Rate_of_risk_return_3)
