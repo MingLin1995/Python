@@ -1,12 +1,8 @@
 import aiohttp
 import asyncio
-import requests
 from flask import Flask, render_template
-import concurrent.futures
 
 import time
-# 記錄程式碼開始執行的時間
-start_time = time.time()
 
 
 BASE_URL = "https://fapi.binance.com/fapi/v1"
@@ -17,10 +13,18 @@ BASE_URL = "https://fapi.binance.com/fapi/v1"
 
 async def fetch_volume(session):
     volume_url = f"{BASE_URL}/ticker/24hr"
-    volume_info = requests.get(volume_url).json()
-    sorted_volume_info = sorted(volume_info, key=lambda volume: float(
-        volume.get("quoteVolume")), reverse=True)
-    return sorted_volume_info
+    try:
+        async with session.get(volume_url) as response:
+            if response.status == 200:
+                volume_info = await response.json()
+                sorted_volume_info = sorted(volume_info, key=lambda volume: float(
+                    volume.get("quoteVolume")), reverse=True)
+                return sorted_volume_info
+            else:
+                return None
+    except aiohttp.ClientError as e:
+        print(f"Error: {e}")
+        return None
 
 
 # 判斷單位數
@@ -44,7 +48,7 @@ async def fetch_klines(session, symbol, time_interval):
     params = {
         "symbol": symbol,
         "interval": time_interval,
-        "limit": 100,
+        "limit": 240,
     }
     response = await session.get(klines_url, params=params)
     klines_data = await response.json()
@@ -82,19 +86,18 @@ async def analyze_and_print_results(session, sorted_volume_info, interval_1, int
 
         # 參數一的均線
         group_ma_1_interval_1 = [
-            calculate_moving_average(
-                klines_data_interval_1, interval_1["param_1"]),
-            calculate_moving_average(
-                klines_data_interval_1, interval_1["param_2"]),
-            calculate_moving_average(
-                klines_data_interval_1, interval_1["param_3"]) if interval_1["param_3"] != 0 else None
+            round(calculate_moving_average(klines_data_interval_1, param), 7)
+            for param in [interval_1["param_1"], interval_1["param_2"], interval_1["param_3"]]
+            if param != 0
         ]
+
         if interval_1["param_3"] != 0:
             if eval(f"group_ma_1_interval_1[0] {interval_1['comparison_operator_1']} group_ma_1_interval_1[1] {interval_1['logical_operator']} group_ma_1_interval_1[1] {interval_1['comparison_operator_2']} group_ma_1_interval_1[2]"):
                 if interval_2 is None:
                     result_dict = {
                         "標的": symbol,
                         "成交量": formatted_volume,
+
                     }
                     results.append(result_dict)
                 else:
@@ -570,10 +573,10 @@ async def analyze_and_print_results(session, sorted_volume_info, interval_1, int
 async def main():
     async with aiohttp.ClientSession() as session:
         interval_1 = {
-            "time_interval": "15m",  # 用選單 幣安支援15種
-            "param_1": 99,  # MA設定上限為1500MA
+            "time_interval": "1d",  # 用選單 幣安支援15種
+            "param_1": 25,  # MA設定上限為1500MA
             "param_2": 60,
-            "param_3": 25,
+            "param_3": 99,
             "comparison_operator_1": ">",  # 用選單 > >= < <=
             "comparison_operator_2": ">",
             "logical_operator": "and"  # 用選單 or and
@@ -584,11 +587,11 @@ async def main():
 
         interval_2 = {
             "time_interval": "1h",
-            "param_1": 99,
+            "param_1": None,
             "param_2": 60,
-            "param_3": 25,
-            "comparison_operator_1": "<",
-            "comparison_operator_2": "<",
+            "param_3": 99,
+            "comparison_operator_1": ">",
+            "comparison_operator_2": ">",
             "logical_operator": "and"
         }
 
@@ -597,10 +600,10 @@ async def main():
 
         interval_3 = {
             "time_interval": "4h",
-            "param_1": 60,
-            "param_2": 25,
-            "param_3": None,
-            "comparison_operator_1": "<",
+            "param_1": None,
+            "param_2": 60,
+            "param_3": 99,
+            "comparison_operator_1": ">",
             "comparison_operator_2": ">",
             "logical_operator": "and"
         }
@@ -610,9 +613,9 @@ async def main():
 
         interval_4 = {
             "time_interval": "1d",
-            "param_1": 99,
-            "param_2": 25,
-            "param_3": None,
+            "param_1": None,
+            "param_2": 60,
+            "param_3": 99,
             "comparison_operator_1": ">",
             "comparison_operator_2": ">",
             "logical_operator": "and"
@@ -630,6 +633,7 @@ async def main():
                         print("沒有符合的資料")
                     else:
                         print(results)
+                        print(len(results), "筆資料")
                 else:
                     results = await analyze_and_print_results(session, sorted_volume_info, interval_1, interval_2)
                     if not results:
@@ -653,12 +657,14 @@ async def main():
         print(results) """
 
 if __name__ == "__main__":
+    # 記錄程式碼開始執行的時間
+    start_time = time.time()
     asyncio.run(main())
 
-# 記錄程式碼結束執行的時間
-end_time = time.time()
+    # 記錄程式碼結束執行的時間
+    end_time = time.time()
 
-# 計算執行時間
-execution_time = end_time - start_time
+    # 計算執行時間
+    execution_time = end_time - start_time
 
-print(f"程式碼執行時間：{execution_time:.4f} 秒")
+    print(f"程式碼執行時間：{execution_time:.4f} 秒")
