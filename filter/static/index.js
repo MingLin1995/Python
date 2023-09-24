@@ -134,7 +134,7 @@ function processForm() {
       logical_operator: logicalOperator,
     });
 
-    console.log(intervalData);
+    //console.log(intervalData);
   }
 
   fetch("/add_intervals", {
@@ -146,8 +146,15 @@ function processForm() {
   })
     .then((response) => response.json())
     .then((data) => {
-      // 处理后端的响应
-      console.log(data.message);
+      const messageElement = document.getElementById("message");
+
+      messageElement.innerHTML = "";
+
+      data.message.forEach((item) => {
+        const newItemElement = document.createElement("div");
+        newItemElement.innerHTML = `標的：${item["標的"]}，成交量：${item["成交量"]}`;
+        messageElement.appendChild(newItemElement);
+      });
     })
     .catch((error) => {
       console.error("Error:", error);

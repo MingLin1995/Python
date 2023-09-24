@@ -1,4 +1,4 @@
-import aiohttp
+import aiohttp  # pip install aiohttp
 import asyncio
 from flask import Flask, render_template, request, jsonify
 
@@ -13,10 +13,8 @@ intervals = []
 def add_intervals_route():
     data = request.json
     intervals.extend(data)
-    # print(intervals)
-    asyncio.run(main(data))
-
-    return jsonify({"message": "Intervals added successfully"})
+    data = asyncio.run(main(data))
+    return jsonify({"message": data})
 
 
 @app.route('/', methods=['GET'])
@@ -47,14 +45,11 @@ async def fetch_volume(session):
 
 
 def format_volume(volume):
-    if volume >= 100000000:
-        volume_units = "億"
-        volume_formatted = volume / 100000000
-    else:
-        volume_units = "萬"
-        volume_formatted = volume / 10000
-    formatted_volume = "{:,.2f}".format(volume_formatted)  # 成交量取到小數點第二位
+    volume_units = "億" if volume >= 100000000 else "萬"
+    volume_formatted = volume / 100000000 if volume >= 100000000 else volume / 10000
+    formatted_volume = "{:,.2f}".format(volume_formatted)
     return f"{formatted_volume}{volume_units}"
+
 
 # 取得K線資料
 
@@ -94,6 +89,7 @@ class MovingAverageCalculator:
 
 async def process_symbol(session, symbol, time_interval, param_1, param_2, comparison_operator_1, param_3, param_4, comparison_operator_2, logical_operator):
     klines_data = await fetch_klines(session, symbol, time_interval)
+
     ma_1 = MovingAverageCalculator(param_1)
     ma_2 = MovingAverageCalculator(param_2)
 
@@ -118,7 +114,7 @@ async def process_symbol(session, symbol, time_interval, param_1, param_2, compa
         ma_4_value = round(ma_4.get_moving_average(),
                            7) if ma_4.get_moving_average() is not None else None
 
-    # 沒被執行所以等於None
+    # 沒被執行時等於None
     ma_3_value = None
     ma_4_value = None
 
@@ -143,7 +139,11 @@ async def apply_filter_parallel(session, time_interval, param_1, param_2, param_
         for symbol in symbols
     ]
     results = await asyncio.gather(*tasks)
-    return [symbol for symbol in results if symbol is not None]
+
+    # 取出symbols不為None的值繼續篩選
+    selected_symbols = [symbol for symbol in results if symbol is not None]
+
+    return selected_symbols
 
 
 async def main(data):
@@ -193,10 +193,16 @@ async def main(data):
         ] """
 
         sorted_volume_info = await fetch_volume(session)
-        symbols = [entry["symbol"] for entry in sorted_volume_info]
+
+        # 轉換為字典
+        symbol_info_dict = {entry["symbol"]: entry for entry in sorted_volume_info}
+
+        # 從 symbol_info_dict 中提取符號列表
+        symbols = list(symbol_info_dict.keys())
+        """ symbols = [entry["symbol"] for entry in sorted_volume_info] """
         selected_symbols = None
 
-        for i, interval in enumerate(intervals, start=1):
+        for interval in intervals:
             time_interval = interval.get("time_interval")
             param_1 = interval.get("param_1")
             param_2 = interval.get("param_2")
@@ -206,7 +212,7 @@ async def main(data):
             comparison_operator_2 = interval.get("comparison_operator_2")
             logical_operator = interval.get("logical_operator")
 
-            if param_1 is None:
+            if param_1 is None:  # 如果沒有資料就跳過該層篩選
                 continue
 
             if selected_symbols is None:
@@ -217,15 +223,15 @@ async def main(data):
         symbol_volume_data = []
 
         for symbol in selected_symbols:
-            for entry in sorted_volume_info:
-                if entry["symbol"] == symbol:
-                    symbol_data = {"標的": symbol, "成交量": format_volume(
-                        float(entry["quoteVolume"]))}
-                    symbol_volume_data.append(symbol_data)
-                    break
+            if symbol in symbol_info_dict:
+                entry = symbol_info_dict[symbol]
+                symbol_data = {"標的": symbol, "成交量": format_volume(
+                    float(entry["quoteVolume"]))}
+                symbol_volume_data.append(symbol_data)
 
         print(symbol_volume_data)
         print(len(symbol_volume_data), "筆資料")
+    return symbol_volume_data
 
 
 if __name__ == "__main__":
