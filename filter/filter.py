@@ -54,12 +54,12 @@ def format_volume(volume):
 # 取得K線資料
 
 
-async def fetch_klines(session, symbol, time_interval):
+async def fetch_klines(session, symbol, time_interval, limit):
     klines_url = f"{BASE_URL}/klines"
     params = {
         "symbol": symbol,
         "interval": time_interval,
-        "limit": 365,
+        "limit": limit,
     }
     response = await session.get(klines_url, params=params)
     klines_data = await response.json()
@@ -69,40 +69,41 @@ async def fetch_klines(session, symbol, time_interval):
 
 
 class MovingAverageCalculator:
-    def __init__(self, period):
-        self.period = period
-        self.data = []
-        self.cumulative_sum = 0.0
-
-    def add_data_point(self, value):
-        self.data.append(value)
-        self.cumulative_sum += value
-        # 如果資料數量>時框，就扣掉最舊的一筆資料
-        if len(self.data) > self.period:
-            self.cumulative_sum -= self.data.pop(0)
+    def __init__(self, param, initial_data=None):
+        self.param = param
+        self.data = initial_data if initial_data is not None else []
+        self.cumulative_sum = sum(self.data)
 
     def get_moving_average(self):
-        if len(self.data) < self.period:
+        if len(self.data) < self.param:  # 如果K線數量不足
             return None
-        return self.cumulative_sum / self.period
+        return self.cumulative_sum / self.param
 
 
-async def process_symbol(session, symbol, time_interval, param_1, param_2, comparison_operator_1, param_3, param_4, comparison_operator_2, logical_operator):
-    klines_data = await fetch_klines(session, symbol, time_interval)
+# 均線比較
 
-    ma_1 = MovingAverageCalculator(param_1)
-    ma_2 = MovingAverageCalculator(param_2)
+
+async def process_symbol(session, filter_params, symbol):
+
+    time_interval = filter_params.time_interval
+    param_1 = filter_params.param_1
+    param_2 = filter_params.param_2
+    param_3 = filter_params.param_3
+    param_4 = filter_params.param_4
+    comparison_operator_1 = filter_params.comparison_operator_1
+    comparison_operator_2 = filter_params.comparison_operator_2
+    logical_operator = filter_params.logical_operator
+
+    klines_data1 = await fetch_klines(session, symbol, time_interval, param_1)
+    klines_data2 = await fetch_klines(session, symbol, time_interval, param_2)
+    ma_1 = MovingAverageCalculator(param_1, klines_data1)
+    ma_2 = MovingAverageCalculator(param_2, klines_data2)
 
     if param_3 is not None and param_4 is not None:
-        ma_3 = MovingAverageCalculator(param_3)
-        ma_4 = MovingAverageCalculator(param_4)
-
-    for value in klines_data:
-        ma_1.add_data_point(value)
-        ma_2.add_data_point(value)
-        if param_3 is not None and param_4 is not None:
-            ma_3.add_data_point(value)
-            ma_4.add_data_point(value)
+        klines_data3 = await fetch_klines(session, symbol, time_interval, param_3)
+        klines_data4 = await fetch_klines(session, symbol, time_interval, param_4)
+        ma_3 = MovingAverageCalculator(param_3, klines_data3)
+        ma_4 = MovingAverageCalculator(param_4, klines_data4)
 
     ma_1_value = round(ma_1.get_moving_average(),
                        7) if ma_1.get_moving_average() is not None else None
@@ -131,11 +132,13 @@ async def process_symbol(session, symbol, time_interval, param_1, param_2, compa
 
     return None
 
+# 建立任務
 
-async def apply_filter_parallel(session, time_interval, param_1, param_2, param_3, param_4, comparison_operator_1, comparison_operator_2, logical_operator, symbols):
+
+async def apply_filter_parallel(session, filter_params, symbols):
+
     tasks = [
-        process_symbol(session, symbol, time_interval, param_1, param_2, comparison_operator_1, param_3, param_4,
-                       comparison_operator_2, logical_operator)
+        process_symbol(session, filter_params, symbol)
         for symbol in symbols
     ]
     results = await asyncio.gather(*tasks)
@@ -145,94 +148,80 @@ async def apply_filter_parallel(session, time_interval, param_1, param_2, param_
 
     return selected_symbols
 
+# 建立物件
+
+
+class FilterParameters:
+    def __init__(self, time_interval, param_1, param_2, param_3, param_4,
+                 comparison_operator_1, comparison_operator_2, logical_operator):
+        self.time_interval = time_interval
+        self.param_1 = param_1
+        self.param_2 = param_2
+        self.param_3 = param_3
+        self.param_4 = param_4
+        self.comparison_operator_1 = comparison_operator_1
+        self.comparison_operator_2 = comparison_operator_2
+        self.logical_operator = logical_operator
+
+
+def get_filter_params(interval):
+    return FilterParameters(
+        time_interval=interval.get("time_interval"),
+        param_1=interval.get("param_1"),
+        param_2=interval.get("param_2"),
+        param_3=interval.get("param_3"),
+        param_4=interval.get("param_4"),
+        comparison_operator_1=interval.get("comparison_operator_1"),
+        comparison_operator_2=interval.get("comparison_operator_2"),
+        logical_operator=interval.get("logical_operator")
+    )
+
 
 async def main(data):
     async with aiohttp.ClientSession() as session:
         intervals = data
-        """  [
-            {
-                "time_interval": "15m",
-                "param_1": 25,
-                "param_2": 60,
-                "param_3": None,
-                "param_4": 99,
-                "comparison_operator_1": ">",
-                "comparison_operator_2": ">",
-                "logical_operator": "and"
-            },
-            {
-                "time_interval": "1h",
-                "param_1": 25,
-                "param_2": 60,
-                "param_3": 60,
-                "param_4": 99,
-                "comparison_operator_1": ">",
-                "comparison_operator_2": ">",
-                "logical_operator": "and"
-            },
-            {
-                "time_interval": "4h",
-                "param_1": 25,
-                "param_2": 60,
-                "param_3": 60,
-                "param_4": None,
-                "comparison_operator_1": ">",
-                "comparison_operator_2": ">",
-                "logical_operator": "and"
-            },
-            {
-                "time_interval": "1d",
-                "param_1": None,
-                "param_2": 60,
-                "param_3": None,
-                "param_4": 99,
-                "comparison_operator_1": ">",
-                "comparison_operator_2": ">",
-                "logical_operator": "and"
-            }
-        ] """
-
         sorted_volume_info = await fetch_volume(session)
 
         # 轉換為字典
         symbol_info_dict = {entry["symbol"]: entry for entry in sorted_volume_info}
 
-        # 從 symbol_info_dict 中提取符號列表
+        # 取出symbol
         symbols = list(symbol_info_dict.keys())
-        """ symbols = [entry["symbol"] for entry in sorted_volume_info] """
+
         selected_symbols = None
 
         for interval in intervals:
-            time_interval = interval.get("time_interval")
-            param_1 = interval.get("param_1")
-            param_2 = interval.get("param_2")
-            param_3 = interval.get("param_3")
-            param_4 = interval.get("param_4")
-            comparison_operator_1 = interval.get("comparison_operator_1")
-            comparison_operator_2 = interval.get("comparison_operator_2")
-            logical_operator = interval.get("logical_operator")
+            filter_params = get_filter_params(interval)
 
-            if param_1 is None:  # 如果沒有資料就跳過該層篩選
+            if filter_params.param_1 is None:
                 continue
 
             if selected_symbols is None:
-                selected_symbols = await apply_filter_parallel(session, time_interval, param_1, param_2, param_3, param_4, comparison_operator_1, comparison_operator_2, logical_operator, symbols)
+                selected_symbols = await apply_filter_parallel(session, filter_params, symbols)
             else:
-                selected_symbols = await apply_filter_parallel(session, time_interval, param_1, param_2, param_3, param_4, comparison_operator_1, comparison_operator_2, logical_operator, selected_symbols)
+                selected_symbols = await apply_filter_parallel(session, filter_params, selected_symbols)
 
-        symbol_volume_data = []
-
-        for symbol in selected_symbols:
-            if symbol in symbol_info_dict:
-                entry = symbol_info_dict[symbol]
-                symbol_data = {"標的": symbol, "成交量": format_volume(
-                    float(entry["quoteVolume"]))}
-                symbol_volume_data.append(symbol_data)
-
+        symbol_volume_data = get_symbol_volume_data(
+            selected_symbols, symbol_info_dict)
         print(symbol_volume_data)
         print(len(symbol_volume_data), "筆資料")
     return symbol_volume_data
 
+# 取的標的、成交量
+
+
+def get_symbol_volume_data(selected_symbols, symbol_info_dict):
+    symbol_volume_data = []
+
+    for symbol in selected_symbols:
+        if symbol in symbol_info_dict:
+            entry = symbol_info_dict[symbol]
+            symbol_data = {"標的": symbol, "成交量": format_volume(
+                float(entry["quoteVolume"]))}
+            symbol_volume_data.append(symbol_data)
+
+    return symbol_volume_data
+
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=8000)
