@@ -143,7 +143,7 @@ async def apply_filter_parallel(session, filter_params, symbols):
     ]
     results = await asyncio.gather(*tasks)
 
-    # 取出symbols不為None的值繼續篩選
+    # 取出symbols不為None的值，再繼續篩選
     selected_symbols = [symbol for symbol in results if symbol is not None]
 
     return selected_symbols
@@ -181,11 +181,11 @@ async def main(data):
     async with aiohttp.ClientSession() as session:
         intervals = data
         sorted_volume_info = await fetch_volume(session)
-
+        print(sorted_volume_info[0]["symbol"])
         # 轉換為字典
-        symbol_info_dict = {entry["symbol"]: entry for entry in sorted_volume_info}
-
-        # 取出symbol
+        symbol_info_dict = {entry["symbol"]
+            : entry for entry in sorted_volume_info}
+        # 取出symbol，建立列表
         symbols = list(symbol_info_dict.keys())
 
         selected_symbols = None
@@ -213,15 +213,15 @@ async def main(data):
 def get_symbol_volume_data(selected_symbols, symbol_info_dict):
     symbol_volume_data = []
 
-    for symbol in selected_symbols:
-        if symbol in symbol_info_dict:
-            entry = symbol_info_dict[symbol]
-            symbol_data = {"標的": symbol, "成交量": format_volume(
-                float(entry["quoteVolume"]))}
-            symbol_volume_data.append(symbol_data)
+    # 使用字典解析一次性获取所有 selected_symbols 的数据
+    symbol_volume_data = [
+        {"標的": symbol, "成交量": format_volume(
+            float(symbol_info_dict[symbol]["quoteVolume"]))}
+        for symbol in selected_symbols if symbol in symbol_info_dict
+    ]
 
     return symbol_volume_data
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8000)
+    app.run(host='0.0.0.0', port=5000)
