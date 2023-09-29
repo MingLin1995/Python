@@ -150,11 +150,19 @@ function processForm() {
 
       messageElement.innerHTML = "";
 
-      data.message.forEach((item) => {
-        const newItemElement = document.createElement("div");
-        newItemElement.innerHTML = `標的：${item["標的"]}，成交量：${item["成交量"]}`;
-        messageElement.appendChild(newItemElement);
-      });
+      if (data.message.length === 0) {
+        const noDataElement = document.createElement("div");
+        noDataElement.textContent = "查無任何標的";
+        messageElement.appendChild(noDataElement);
+      } else {
+        console.log(data.message);
+
+        data.message.forEach((item) => {
+          const newItemElement = document.createElement("div");
+          newItemElement.innerHTML = `標的：${item["標的"]}，成交量：${item["成交量"]}`;
+          messageElement.appendChild(newItemElement);
+        });
+      }
     })
     .catch((error) => {
       console.error("Error:", error);
