@@ -98,26 +98,24 @@ async def process_symbol(session, filter_params, symbol):
     klines_data2 = await fetch_klines(session, symbol, time_interval, param_2)
     ma_1 = MovingAverageCalculator(param_1, klines_data1)
     ma_2 = MovingAverageCalculator(param_2, klines_data2)
+    ma_1_value = round(ma_1.get_moving_average(),
+                       7) if ma_1.get_moving_average() is not None else None
+    ma_2_value = round(ma_2.get_moving_average(),
+                       7) if ma_2.get_moving_average() is not None else None
+
+    # 沒被執行時等於None
+    ma_3_value = None
+    ma_4_value = None
 
     if param_3 is not None and param_4 is not None:
         klines_data3 = await fetch_klines(session, symbol, time_interval, param_3)
         klines_data4 = await fetch_klines(session, symbol, time_interval, param_4)
         ma_3 = MovingAverageCalculator(param_3, klines_data3)
         ma_4 = MovingAverageCalculator(param_4, klines_data4)
-
-    ma_1_value = round(ma_1.get_moving_average(),
-                       7) if ma_1.get_moving_average() is not None else None
-    ma_2_value = round(ma_2.get_moving_average(),
-                       7) if ma_2.get_moving_average() is not None else None
-    if param_3 is not None and param_4 is not None:
         ma_3_value = round(ma_3.get_moving_average(),
                            7) if ma_3.get_moving_average() is not None else None
         ma_4_value = round(ma_4.get_moving_average(),
                            7) if ma_4.get_moving_average() is not None else None
-
-    # 沒被執行時等於None
-    ma_3_value = None
-    ma_4_value = None
 
     if ma_1_value is not None and ma_2_value is not None:
         if ma_3_value is not None or ma_4_value is not None:
@@ -181,7 +179,6 @@ async def main(data):
     async with aiohttp.ClientSession() as session:
         intervals = data
         sorted_volume_info = await fetch_volume(session)
-        print(sorted_volume_info[0]["symbol"])
         # 轉換為字典
         symbol_info_dict = {entry["symbol"]
             : entry for entry in sorted_volume_info}
