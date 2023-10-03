@@ -95,6 +95,8 @@
 
 function processForm() {
   const intervalData = [];
+  // 清空 intervalData
+  intervalData.length = 0;
 
   const parameterGroups = 4;
 
@@ -133,9 +135,9 @@ function processForm() {
       comparison_operator_2: comparisonOperator[1].comparisonOperator,
       logical_operator: logicalOperator,
     });
-
-    //console.log(intervalData);
   }
+
+  console.log(intervalData);
 
   fetch("/add_intervals", {
     method: "POST",
