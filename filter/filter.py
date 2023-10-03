@@ -2,6 +2,7 @@ import aiohttp  # pip install aiohttp
 import asyncio
 from flask import Flask, render_template, request, jsonify
 
+
 app = Flask(__name__)
 
 BASE_URL = "https://fapi.binance.com/fapi/v1"
@@ -11,7 +12,9 @@ intervals = []
 
 @app.route('/add_intervals', methods=['POST'])
 def add_intervals_route():
+    global intervals  # 宣告為全局變數
     data = request.json
+    intervals.clear()  # 清空 intervals 列表
     intervals.extend(data)
     data = asyncio.run(main(data))
     return jsonify({"message": data})
@@ -20,7 +23,6 @@ def add_intervals_route():
 @app.route('/', methods=['GET'])
 def index():
     return render_template("index.html")
-
 
 # 成交量
 
@@ -117,6 +119,8 @@ async def process_symbol(session, filter_params, symbol):
         ma_4_value = round(ma_4.get_moving_average(),
                            7) if ma_4.get_moving_average() is not None else None
 
+    # print(f"標的：{symbol},時間週期：{time_interval},MA參數一：{ma_1_value},MA參數二：{ma_2_value},MA參數三：{ma_3_value},MA參數四：{ma_4_value}")
+
     if ma_1_value is not None and ma_2_value is not None:
         if ma_3_value is not None or ma_4_value is not None:
             condition = f"{ma_1_value} {comparison_operator_1} {ma_2_value} {logical_operator} {ma_3_value} {comparison_operator_2} {ma_4_value}"
@@ -130,7 +134,7 @@ async def process_symbol(session, filter_params, symbol):
 
     return None
 
-# 建立任務
+# 建立任務 25/99 17 13 13 4
 
 
 async def apply_filter_parallel(session, filter_params, symbols):
@@ -202,6 +206,7 @@ async def main(data):
             selected_symbols, symbol_info_dict)
         print(symbol_volume_data)
         print(len(symbol_volume_data), "筆資料")
+
     return symbol_volume_data
 
 # 取的標的、成交量
@@ -221,4 +226,4 @@ def get_symbol_volume_data(selected_symbols, symbol_info_dict):
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=8000)
