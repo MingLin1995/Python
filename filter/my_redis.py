@@ -1,5 +1,5 @@
 # my_redis.py
-import redis
+import redis  # pip install redis
 import pickle
 
 """ 建立Redis連接 """

@@ -1,6 +1,6 @@
 # MA.py
 from my_redis import load_klines_data_from_redis
-import numpy as np
+import numpy as np  # pip install numpy
 
 
 """ 取得特定時框K線資料 """

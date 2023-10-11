@@ -2,7 +2,8 @@
 import requests
 from my_redis import save_data_to_redis
 import time
-import schedule
+import schedule  # pip install schedule
+
 
 """ 更新標的、成交量資料 """
 
@@ -26,6 +27,7 @@ def fetch_24hr_data():
     volume_url = f"{BASE_URL}/ticker/24hr"
     try:
         response = requests.get(volume_url)
+        print(response.status_code)
         if response.status_code == 200:
             print("呼叫API！")
             data_24hr = response.json()
