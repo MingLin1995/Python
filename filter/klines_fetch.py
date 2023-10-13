@@ -110,6 +110,6 @@ if __name__ == "__main__":
 
     try:
         while True:
-            pass
+            time.sleep(60)  # 休眠減少CPU負擔
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()
