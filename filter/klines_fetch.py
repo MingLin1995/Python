@@ -3,31 +3,34 @@ from my_redis import load_data_from_redis, save_klines_data_to_redis
 import requests
 import concurrent.futures
 import time
-import schedule
+from apscheduler.schedulers.background import BackgroundScheduler
 
 
 """ 更新K線資料 """
 
 
 def update_symbol_klines_data(time_interval):
-    symbols_klines_data = get_symbol(time_interval)  # 從Redis取得標的資料
-    if symbols_klines_data is not None:
-        save_klines_data_to_redis(
-            symbols_klines_data, time_interval)  # 儲存K線資料到Redis
-        print(f"更新 symbol_close_prices_data_{time_interval} 到 Redis",
-              time.strftime("%Y-%m-%d %H:%M:%S"))
-    else:
-        print(f"更新失敗，時間間隔：{time_interval}")
-
-
-""" 取得標的資料 """
-
-
-def get_symbol(time_interval):
     symbol_quote_volume_data = load_data_from_redis()  # 從Redis取得標的資料
+    if symbol_quote_volume_data is not None:
+        symbols_klines_data = get_symbol_klines_data(
+            symbol_quote_volume_data, time_interval)
+        if symbols_klines_data is not None:
+            save_klines_data_to_redis(
+                symbols_klines_data, time_interval)  # 儲存K線資料到Redis
+            """ print(f"更新 symbol_close_prices_data_{time_interval} 到 Redis",
+                  time.strftime("%Y-%m-%d %H:%M:%S")) """
+        else:
+            print(f"更新失敗，時間間隔：{time_interval}")
+    else:
+        print("無法獲得標的資料")
+
+
+""" 取得K線資料資訊 """
+
+
+def get_symbol_klines_data(symbol_quote_volume_data, time_interval):
     print("呼叫API！")
-    # 平行處理
-    with concurrent.futures.ThreadPoolExecutor() as executor:  # 取得K線資料
+    with concurrent.futures.ThreadPoolExecutor() as executor:
         results = list(executor.map(fetch_klines_data, [
                        (entry['symbol'], time_interval) for entry in symbol_quote_volume_data]))
     return results
@@ -95,11 +98,18 @@ if __name__ == "__main__":
         update_symbol_klines_data(time_interval)
         time.sleep(10)
 
-    # 根據更新頻率，定時執行，無限循環
-    for time_interval, update_frequency in time_intervals.items():
-        schedule.every(update_frequency).minutes.do(
-            update_symbol_klines_data, time_interval)
+    def job(time_interval):
+        update_symbol_klines_data(time_interval)
 
-    while True:
-        schedule.run_pending()
-        time.sleep(15)
+    scheduler = BackgroundScheduler()
+    for time_interval, update_frequency in time_intervals.items():
+        scheduler.add_job(
+            job, 'interval', minutes=update_frequency, args=[time_interval])
+
+    scheduler.start()
+
+    try:
+        while True:
+            pass
+    except (KeyboardInterrupt, SystemExit):
+        scheduler.shutdown()

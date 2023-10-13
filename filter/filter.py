@@ -1,6 +1,6 @@
 from flask import *
 import concurrent.futures
-import time
+# import time
 from MA import process_interval
 from my_redis import load_data_from_redis
 
@@ -11,11 +11,11 @@ app = Flask(__name__)
 @app.route('/add_intervals', methods=['POST'])
 def add_intervals_route():
     intervals = request.json
-    start_time = time.time()
+    # start_time = time.time()
     results = main(intervals)
-    end_time = time.time()
-    execution_time = end_time - start_time
-    print(f"執行時間：{execution_time} 秒")
+    # end_time = time.time()
+    # execution_time = end_time - start_time
+    # print(f"執行時間：{execution_time} 秒")
     return jsonify({"message": results})
 
 
@@ -60,8 +60,8 @@ def main(intervals):
             "成交量": formatted_volume
         })
 
-    print(matched_data)
-    print(len(matched_data), "筆資料")
+    # print(matched_data)
+    # print(len(matched_data), "筆資料")
     return matched_data
 
 
