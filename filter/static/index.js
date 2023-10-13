@@ -64,9 +64,14 @@ function processForm() {
       } else {
         console.log(data.message);
 
+        // 成交量大到小
+        data.message.sort((a, b) => b.成交量 - a.成交量);
+
         data.message.forEach((item) => {
           const newItemElement = document.createElement("div");
-          newItemElement.innerHTML = `標的：${item["標的"]}，成交量：${item["成交量"]}`;
+          newItemElement.innerHTML = `標的：${
+            item["標的"]
+          }，成交量：${formatVolume(item.成交量)}`;
           messageElement.appendChild(newItemElement);
         });
       }
@@ -74,4 +79,19 @@ function processForm() {
     .catch((error) => {
       console.error("Error:", error);
     });
+}
+
+function formatVolume(volume) {
+  if (volume >= 100000000) {
+    // 如果成交量大于等于1億，将其格式化为億
+    const formattedVolume = (volume / 100000000).toFixed(2) + "億";
+    return formattedVolume;
+  } else if (volume >= 10000) {
+    // 如果成交量大于等于1萬，将其格式化为萬
+    const formattedVolume = (volume / 10000).toFixed(2) + "萬";
+    return formattedVolume;
+  } else {
+    // 如果成交量小于1萬，直接显示原始值
+    return volume.toFixed(2);
+  }
 }

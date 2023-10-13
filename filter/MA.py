@@ -47,8 +47,8 @@ def calculate_ma(data, intervals):
             if param is not None:
                 # print(f" {symbol} 的 {param} 有參數")
                 ma = np.mean(close_prices[:param])
-                ma_str = "{:.7f}".format(ma)  # 小數點第七位
-                ma_data[f'MA_{param}'] = float(ma_str)
+                ma_data[f'MA_{param}'] = round(ma, 7)  # 小數點第七位
+
             else:
                 # print(f" {symbol} 的 {param} 沒有參數")
                 continue

@@ -28,7 +28,7 @@ def main(intervals):
 
     # 多線程處理
     results = []
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         results = list(executor.map(process_interval, intervals))
 
     # 整理不同時間間隔篩所選出的標的
@@ -54,25 +54,14 @@ def main(intervals):
             if entry['symbol'] == symbol:
                 target_quote_volume = float(entry['quote_volume'])
                 break
-        formatted_volume = format_volume(target_quote_volume)
         matched_data.append({
             "標的": symbol,
-            "成交量": formatted_volume
+            "成交量": target_quote_volume
         })
 
     # print(matched_data)
     # print(len(matched_data), "筆資料")
     return matched_data
-
-
-""" 判斷單位數 """
-
-
-def format_volume(volume):
-    volume_units = "億" if volume >= 100000000 else "萬"
-    volume_formatted = volume / 100000000 if volume >= 100000000 else volume / 10000
-    formatted_volume = "{:,.2f}".format(volume_formatted)
-    return f"{formatted_volume}{volume_units}"
 
 
 if __name__ == "__main__":
