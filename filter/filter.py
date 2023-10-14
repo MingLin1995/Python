@@ -1,3 +1,4 @@
+# filter.py
 from flask import *
 import concurrent.futures
 # import time
@@ -26,9 +27,8 @@ def index():
 
 def main(intervals):
 
-    # 多線程處理
     results = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         results = list(executor.map(process_interval, intervals))
 
     # 整理不同時間間隔篩所選出的標的

@@ -30,7 +30,7 @@ def update_symbol_klines_data(time_interval):
 
 def get_symbol_klines_data(symbol_quote_volume_data, time_interval):
     print("呼叫API！")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         results = list(executor.map(fetch_klines_data, [
                        (entry['symbol'], time_interval) for entry in symbol_quote_volume_data]))
     return results
@@ -74,8 +74,8 @@ def fetch_klines_data(symbol_and_interval):
 
 """ 時框、更新頻率(分鐘) """
 time_intervals = {
-    "1m": 1,
-    "3m": 3,
+    # "1m": 1,
+    # "3m": 3,
     "5m": 5,
     "15m": 15,
     "30m": 30,
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     # 初始更新一次
     for time_interval in time_intervals:
         update_symbol_klines_data(time_interval)
-        time.sleep(10)
+        time.sleep(60)
 
     def job(time_interval):
         update_symbol_klines_data(time_interval)
@@ -110,6 +110,6 @@ if __name__ == "__main__":
 
     try:
         while True:
-            time.sleep(60)  # 休眠減少CPU負擔
+            time.sleep(60*5)  # 休眠減少CPU負擔
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()
