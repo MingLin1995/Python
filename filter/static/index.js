@@ -1,4 +1,7 @@
 function processForm() {
+  const messageElement = document.getElementById("message");
+  messageElement.innerHTML = "搜尋中...";
+
   const intervalData = [];
   // 清空 intervalData
   intervalData.length = 0;
@@ -53,8 +56,6 @@ function processForm() {
   })
     .then((response) => response.json())
     .then((data) => {
-      const messageElement = document.getElementById("message");
-
       messageElement.innerHTML = "";
 
       if (data.message.length === 0) {
