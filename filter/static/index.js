@@ -63,7 +63,7 @@ function processForm() {
         noDataElement.textContent = "查無任何標的";
         messageElement.appendChild(noDataElement);
       } else {
-        console.log(data.message);
+        //console.log(data.message);
 
         // 成交量大到小
         data.message.sort((a, b) => b.成交量 - a.成交量);
@@ -78,6 +78,9 @@ function processForm() {
       }
     })
     .catch((error) => {
+      messageElement.innerHTML = ""; // 清空messageElement
+      messageElement.innerHTML =
+        "該時間週期資料庫更新中，請稍後再試試或是換個時框";
       console.error("Error:", error);
     });
 }
