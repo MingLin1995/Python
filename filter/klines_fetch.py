@@ -18,8 +18,8 @@ def update_symbol_klines_data(time_interval):
         if symbols_klines_data is not None:
             save_klines_data_to_redis(
                 symbols_klines_data, time_interval)  # 儲存K線資料到Redis
-            """ print(f"更新 symbol_close_prices_data_{time_interval} 到 Redis",
-                  time.strftime("%Y-%m-%d %H:%M:%S")) """
+            print(f"更新 symbol_close_prices_data_{time_interval} 到 Redis",
+                  time.strftime("%Y-%m-%d %H:%M:%S"))
         else:
             print(f"更新失敗，時間間隔：{time_interval}")
     else:
@@ -30,7 +30,7 @@ def update_symbol_klines_data(time_interval):
 
 
 def get_symbol_klines_data(symbol_quote_volume_data, time_interval):
-    # print("呼叫API！")
+    print("呼叫API！")
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         results = list(executor.map(fetch_klines_data, [
                        (entry['symbol'], time_interval) for entry in symbol_quote_volume_data]))
@@ -120,6 +120,6 @@ if __name__ == "__main__":
 
     try:
         while True:
-            time.sleep(60*5)  # 休眠減少CPU負擔
+            time.sleep(60*2.5)  # 休眠減少CPU負擔
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()

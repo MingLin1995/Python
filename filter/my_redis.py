@@ -12,7 +12,7 @@ redis_client = redis.StrictRedis(connection_pool=redis_pool)
 def save_data_to_redis(data):
     # 使用Redis的set方法將數據儲存到Redis中
     redis_client.set('symbol_quote_volume_data',
-                     pickle.dumps(data), ex=60*5)  # 過期時間五分鐘(秒計算)
+                     pickle.dumps(data), ex=60*5*2)  # 過期時間10分鐘(秒計算)
 
 
 """ 載入標的、成交量"""
@@ -52,7 +52,7 @@ def save_klines_data_to_redis(data, time_interval):
     expiration_time = time_intervals.get(time_interval)
     # 使用Redis的set方法將數據儲存到Redis中，根據時間間隔構建鍵名
     redis_client.set(f'kilne_data_{time_interval}',
-                     pickle.dumps(data), ex=(expiration_time*60)+5*60)  # 過期時間動態調整(秒)
+                     pickle.dumps(data), ex=(expiration_time*60)*2)  # 過期時間動態調整(更新時間兩倍)
 
 
 """ 載入K線資料 """
