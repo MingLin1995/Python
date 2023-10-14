@@ -4,6 +4,7 @@ import requests
 import concurrent.futures
 import time
 from apscheduler.schedulers.background import BackgroundScheduler
+import threading
 
 
 """ 更新K線資料 """
@@ -89,17 +90,26 @@ time_intervals = {
     "3d": 60*24,
     "1w": 60*24,
     "1M": 60*24,
+
 }
+
+# 流程控制
+is_job_running = False
+lock = threading.Lock()
 
 
 if __name__ == "__main__":
     # 初始更新一次
     for time_interval in time_intervals:
         update_symbol_klines_data(time_interval)
-        time.sleep(60)
 
     def job(time_interval):
-        update_symbol_klines_data(time_interval)
+        global is_job_running
+        if not is_job_running:
+            with lock:
+                is_job_running = True
+                update_symbol_klines_data(time_interval)
+                is_job_running = False
 
     scheduler = BackgroundScheduler()
     for time_interval, update_frequency in time_intervals.items():

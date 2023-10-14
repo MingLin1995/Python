@@ -12,7 +12,7 @@ redis_client = redis.StrictRedis(connection_pool=redis_pool)
 def save_data_to_redis(data):
     # 使用Redis的set方法將數據儲存到Redis中
     redis_client.set('symbol_quote_volume_data',
-                     pickle.dumps(data), ex=60*5)  # 過期時間十分鐘(秒計算)
+                     pickle.dumps(data), ex=60*5)  # 過期時間五分鐘(秒計算)
 
 
 """ 載入標的、成交量"""
