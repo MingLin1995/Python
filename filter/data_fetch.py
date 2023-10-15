@@ -13,8 +13,8 @@ def update_symbol_quote_volume_data():
     symbol_quote_volume_data = fetch_24hr_data()  # 取得幣安API資料
     if symbol_quote_volume_data is not None:
         save_data_to_redis(symbol_quote_volume_data)  # 儲存到Redis
-        """ print("更新 symbol_quote_volume_data 到 Redis",
-              time.strftime("%Y-%m-%d %H:%M:%S")) """
+        print("更新 symbol_quote_volume_data 到 Redis",
+              time.strftime("%Y-%m-%d %H:%M:%S"))
     else:
         print("更新失敗")
 
@@ -30,7 +30,7 @@ def fetch_24hr_data():
         response = requests.get(volume_url)
         # print(response.status_code)
         if response.status_code == 200:
-            # print("呼叫API！")
+            print("呼叫API！")
             data_24hr = response.json()
             symbol_quote_volume_data = [{'symbol': entry['symbol'], 'quote_volume': entry['quoteVolume']}
                                         for entry in sorted(data_24hr, key=lambda x: float(x['quoteVolume']), reverse=True)]

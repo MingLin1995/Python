@@ -93,10 +93,6 @@ time_intervals = {
 
 }
 
-# 流程控制
-is_job_running = False
-lock = threading.Lock()
-
 
 if __name__ == "__main__":
     # 初始更新一次
@@ -104,22 +100,16 @@ if __name__ == "__main__":
         update_symbol_klines_data(time_interval)
 
     def job(time_interval):
-        global is_job_running
-        if not is_job_running:
-            with lock:
-                is_job_running = True
-                update_symbol_klines_data(time_interval)
-                is_job_running = False
+        update_symbol_klines_data(time_interval)
 
     scheduler = BackgroundScheduler()
     for time_interval, update_frequency in time_intervals.items():
         scheduler.add_job(
             job, 'interval', minutes=update_frequency, args=[time_interval])
-
     scheduler.start()
 
     try:
         while True:
-            time.sleep(60*2.5)  # 休眠減少CPU負擔
+            time.sleep(60*5)  # 休眠減少CPU負擔
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()
