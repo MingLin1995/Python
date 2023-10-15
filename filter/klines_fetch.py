@@ -5,6 +5,7 @@ import concurrent.futures
 import time
 from apscheduler.schedulers.background import BackgroundScheduler
 import threading
+from apscheduler.triggers.interval import IntervalTrigger
 
 
 """ 更新K線資料 """
@@ -73,10 +74,12 @@ def fetch_klines_data(symbol_and_interval):
         return None
 
 
+# 定義一個鎖，以防止重疊執行
+lock = threading.Lock()
+
 """ 時框、更新頻率(分鐘) """
+""" 時框、過期時間(分鐘) """
 time_intervals = {
-    # "1m": 1,
-    # "3m": 3,
     "5m": 5,
     "15m": 15,
     "30m": 30,
@@ -90,8 +93,12 @@ time_intervals = {
     "3d": 60*24,
     "1w": 60*24,
     "1M": 60*24,
-
 }
+
+
+def job(time_interval):
+    with lock:
+        update_symbol_klines_data(time_interval)
 
 
 if __name__ == "__main__":
@@ -99,13 +106,11 @@ if __name__ == "__main__":
     for time_interval in time_intervals:
         update_symbol_klines_data(time_interval)
 
-    def job(time_interval):
-        update_symbol_klines_data(time_interval)
-
     scheduler = BackgroundScheduler()
     for time_interval, update_frequency in time_intervals.items():
-        scheduler.add_job(
-            job, 'interval', minutes=update_frequency, args=[time_interval])
+        trigger = IntervalTrigger(minutes=update_frequency)
+        scheduler.add_job(job, trigger=trigger, args=[time_interval])
+
     scheduler.start()
 
     try:
