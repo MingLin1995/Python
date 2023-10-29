@@ -16,7 +16,7 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          cp ~/desktop/AWS.pem ~/.ssh/id_rsa
+          echo "$EC2_SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
