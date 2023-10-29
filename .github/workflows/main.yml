@@ -13,9 +13,17 @@ jobs:
       #- name: Checkout code
       #  uses: actions/checkout@v2
 
-      - name: Push to EC2
+      - name: Setup SSH
         run: |
-          echo "SSH Key: $EC2_SSH_KEY"
-          ssh -i $EC2_SSH_KEY ubuntu@ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com 'cd /path/to/Python && git pull'
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com "echo SSH setup successfully"
         env:
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Push to EC2
+        run: |
+          ssh -i ~/.ssh/id_rsa ubuntu@ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com 'cd /path/to/Python && git pull'
