@@ -32,7 +32,7 @@ def update_symbol_klines_data(time_interval):
 
 def get_symbol_klines_data(symbol_quote_volume_data, time_interval):
     print("呼叫API！")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         results = list(executor.map(fetch_klines_data, [
                        (entry['symbol'], time_interval) for entry in symbol_quote_volume_data]))
     return results
