@@ -1,4 +1,4 @@
-name: Push-to-EC2
+name: Deploy to EC2
 
 on:
   push:
@@ -14,21 +14,30 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v2
 
-      - name: Create SSH directory
-        run: mkdir -p ~/.ssh
-
-      - name: Configure SSH
+      - name: Set up SSH
         run: |
+          mkdir -p ~/.ssh
           echo "$PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -t rsa $HOST_DNS >> ~/.ssh/known_hosts
+          ssh-keyscan your-hostname.com >> ~/.ssh/known_hosts
         env:
           PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          HOST_DNS: ${{ secrets.HOST_DNS }}
 
-      - name: Push to EC2
-        run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.USERNAME }}@${{ secrets.HOST_DNS }} 'cd /path/to/Python && git pull'
-        env:
-          HOST_DNS: ${{ secrets.HOST_DNS }}
-          USERNAME: ${{ secrets.USERNAME }}
+      - name: Deploy to EC2
+        uses: easingthemes/ssh-deploy@v1
+        with:
+          server: ${{ secrets.HOST_DNS }}
+          username: ${{ secrets.USERNAME }}
+          key: ~/.ssh/id_rsa # Use the SSH key you've set up earlier
+          local: "." # Path to your local code to be deployed
+          remote: "/path/to/Python" # Path on the EC2 instance to deploy to
+
+      - name: SSH into EC2 and pull code
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST_DNS }}
+          username: ${{ secrets.USERNAME }}
+          key: ~/.ssh/id_rsa
+          script: |
+            cd /path/to/Python
+            git pull
