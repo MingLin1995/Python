@@ -15,6 +15,7 @@ jobs:
 
       - name: Push to EC2
         run: |
-          ssh -i ${{ secrets.EC2_SSH_KEY }} ubuntu@ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com 'cd /path/to/Python && git pull'
+          echo "SSH Key: $EC2_SSH_KEY"
+          ssh -i $EC2_SSH_KEY ubuntu@ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com 'cd /path/to/Python && git pull'
         env:
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
