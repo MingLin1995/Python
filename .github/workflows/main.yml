@@ -20,7 +20,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com "echo SSH setup successfully"
+          ssh -v -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com "echo SSH setup successfully"
         env:
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
