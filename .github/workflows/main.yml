@@ -1,0 +1,20 @@
+name: Auto Deploy
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Push to EC2
+        run: |
+          ssh -i ${{ secrets.EC2_SSH_KEY }} ubuntu@ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com 'cd /path/to/Python && git pull'
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
