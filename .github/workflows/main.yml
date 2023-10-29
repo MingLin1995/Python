@@ -14,6 +14,9 @@ jobs:
       - name: Checkout the code
         uses: actions/checkout@v2
 
+      - name: Create SSH directory
+        run: mkdir -p ~/.ssh
+
       - name: Configure SSH
         run: |
           echo "$PRIVATE_KEY" > ~/.ssh/id_rsa
