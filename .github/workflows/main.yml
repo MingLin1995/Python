@@ -11,11 +11,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: SSH Deploy
-        uses: appleboy/ssh-action@v1
+      - name: Executing remote ssh commands using ssh key
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST_DNS }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            ssh -i ~/.ssh/id_rsa ubuntu@ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com 'cd /path/to/Python && git pull'
+            cd /path/to/Python
+            git pull
