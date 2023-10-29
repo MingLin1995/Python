@@ -1,5 +1,6 @@
-name: Auto Deploy
+name: Push-to-EC2
 
+# Trigger deployment only on push to main branch
 on:
   push:
     branches:
@@ -7,22 +8,20 @@ on:
 
 jobs:
   deploy:
+    name: Deploy to EC2 on master branch push
     runs-on: ubuntu-latest
 
     steps:
-      #- name: Checkout code
-      #  uses: actions/checkout@v2
+      - name: Checkout the files
+        uses: actions/checkout@v2
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "$EC2_SSH_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-          ssh -v -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com "echo SSH setup successfully"
+      - name: Deploy to Server 1
+        uses: easingthemes/ssh-deploy@main
         env:
-          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HOST_DNS }}
+          REMOTE_USER: ${{ secrets.USERNAME }}
+          TARGET: ${{ secrets.TARGET_DIR }}
 
       - name: Push to EC2
         run: |
