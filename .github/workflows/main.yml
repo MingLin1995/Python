@@ -12,22 +12,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      #- name: Checkout the files
-      #  uses: actions/checkout@v2
+      - name: Checkout the files
+        uses: actions/checkout@v2
 
-      - name: Deploy to Server 1
-        uses: easingthemes/ssh-deploy@develop
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.HOST_DNS }}
-          REMOTE_USER: ${{ secrets.USERNAME }}
-          TARGET: ${{ secrets.TARGET_DIR }}
-
-      - name: Push to EC2
+      - name: SSH Deploy
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST_DNS }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-        run: |
-          ssh -i ~/.ssh/id_rsa ubuntu@ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com 'cd /path/to/Python && git pull'
+          script: |
+            ssh -i ~/.ssh/id_rsa ubuntu@ec2-54-92-44-255.ap-northeast-1.compute.amazonaws.com 'cd /path/to/Python && git pull'
